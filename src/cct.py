@@ -116,7 +116,7 @@ def _cct(arch, pretrained, progress,
             raise RuntimeError(f'Variant {arch} does not yet have pretrained weights.')
     return model
 
-
+@register_model
 def cct_2(arch, pretrained, progress, *args, **kwargs):
     return _cct(arch, pretrained, progress, num_layers=2, num_heads=2, mlp_ratio=1, embedding_dim=128,
                 *args, **kwargs)

@@ -3,6 +3,11 @@ from ..utils.transformers import MaskedTransformerClassifier
 from ..utils.tokenizer import TextTokenizer
 from ..utils.embedder import Embedder
 
+try:
+    from timm.models.registry import register_model
+except ImportError:
+    from ..registry import register_model
+
 __all__ = [
     'text_cct_2',
     'text_cct_4',
@@ -69,17 +74,17 @@ def _text_cct(num_layers, num_heads, mlp_ratio, embedding_dim,
                    padding=padding,
                    *args, **kwargs)
 
-
+@register_model
 def text_cct_2(*args, **kwargs):
     return _text_cct(num_layers=2, num_heads=2, mlp_ratio=1, embedding_dim=128,
                      *args, **kwargs)
 
-
+@register_model
 def text_cct_4(*args, **kwargs):
     return _text_cct(num_layers=4, num_heads=2, mlp_ratio=1, embedding_dim=128,
                      *args, **kwargs)
 
-
+@register_model
 def text_cct_6(*args, **kwargs):
     return _text_cct(num_layers=6, num_heads=4, mlp_ratio=2, embedding_dim=256,
                      *args, **kwargs)
