@@ -8,10 +8,13 @@ import torch
 import torch.nn as nn
 import torch.optim
 import torch.utils.data
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
+# import torchvision.transforms as transforms
+import torchtext.datasets as datasets
 
-import src as models
+# import src as models
+import src.text as models
+
+from text_data_sets import AgNewsCSVDataset
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("_")
@@ -29,6 +32,12 @@ DATASETS = {
         'img_size': 32,
         'mean': [0.5071, 0.4867, 0.4408],
         'std': [0.2675, 0.2565, 0.2761]
+    },
+    'ag_news': {
+        'num_classes': 4,
+    },
+    'trec': {
+        'num_classes': 6,
     }
 }
 
@@ -42,7 +51,7 @@ def init_parser():
 
     parser.add_argument('--dataset',
                         type=str.lower,
-                        choices=['cifar10', 'cifar100'],
+                        choices=['cifar10', 'cifar100', 'ag_news', 'trec'],
                         default='cifar10')
 
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
@@ -93,32 +102,40 @@ def init_parser():
 def main():
     parser = init_parser()
     args = parser.parse_args()
-    img_size = DATASETS[args.dataset]['img_size']
+    # img_size = DATASETS[args.dataset]['img_size']
     num_classes = DATASETS[args.dataset]['num_classes']
-    img_mean, img_std = DATASETS[args.dataset]['mean'], DATASETS[args.dataset]['std']
+    # img_mean, img_std = DATASETS[args.dataset]['mean'], DATASETS[args.dataset]['std']
 
-    model = models.__dict__[args.model]('', False, False, img_size=img_size,
+    model = models.__dict__[args.model](#'', False, False,
+                                        # img_size=img_size,
                                         num_classes=num_classes,
-                                        positional_embedding=args.positional_embedding,
-                                        n_conv_layers=args.conv_layers,
+                                        # positional_embedding=args.positional_embedding,
+                                        # n_conv_layers=args.conv_layers,
                                         kernel_size=args.conv_size,
-                                        patch_size=args.patch_size)
+                                        # patch_size=args.patch_size
+                                        )
 
     model.load_state_dict(torch.load(args.checkpoint_path, map_location='cpu'))
     print("Loaded checkpoint.")
 
-    normalize = [transforms.Normalize(mean=img_mean, std=img_std)]
+    # normalize = [transforms.Normalize(mean=img_mean, std=img_std)]
 
     if (not args.no_cuda) and torch.cuda.is_available():
         torch.cuda.set_device(args.gpu_id)
         model.cuda(args.gpu_id)
 
-    val_dataset = datasets.__dict__[args.dataset.upper()](
-        root=args.data, train=False, download=args.download, transform=transforms.Compose([
-            transforms.Resize(img_size),
-            transforms.ToTensor(),
-            *normalize,
-        ]))
+    # val_dataset = datasets.__dict__[args.dataset.upper()](
+    #     root=args.data,
+    #     split=('train', 'test')
+    #     # train=False,
+    #     # download=args.download
+    #     # , transform=transforms.Compose([
+    #         # transforms.Resize(img_size),
+    #         # transforms.ToTensor(),
+    #         # *normalize,])
+    #         )
+
+    val_dataset = AgNewsCSVDataset()
 
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
@@ -153,16 +170,17 @@ def cls_validate(val_loader, model, args, time_begin=None):
     acc1_val = 0
     n = 0
     with torch.no_grad():
-        for i, (images, target) in enumerate(val_loader):
+        for i, (texts, target) in enumerate(val_loader):
             if (not args.no_cuda) and torch.cuda.is_available():
-                images = images.cuda(args.gpu_id, non_blocking=True)
+                texts = texts.cuda(args.gpu_id, non_blocking=True)
                 target = target.cuda(args.gpu_id, non_blocking=True)
 
-            output = model(images)
+            print(texts)
+            output = model(texts)
 
             acc1 = accuracy(output, target)
-            n += images.size(0)
-            acc1_val += float(acc1[0] * images.size(0))
+            n += texts.size(0)
+            acc1_val += float(acc1[0] * texts.size(0))
 
             if args.print_freq >= 0 and i % args.print_freq == 0:
                 avg_acc1 = (acc1_val / n)
