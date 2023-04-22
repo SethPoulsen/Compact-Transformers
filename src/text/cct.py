@@ -30,6 +30,7 @@ class TextCCT(nn.Module):
         super(TextCCT, self).__init__()
 
         self.embedder = Embedder(word_embedding_dim=word_embedding_dim,
+                                 vocab_size=77282,
                                  *args, **kwargs)
 
         self.tokenizer = TextTokenizer(n_input_channels=word_embedding_dim,
@@ -44,7 +45,7 @@ class TextCCT(nn.Module):
                                        activation=nn.ReLU)
 
         self.classifier = MaskedTransformerClassifier(
-            seq_len=self.tokenizer.seq_len(seq_len=seq_len, embed_dim=word_embedding_dim),
+            seq_len=102,#self.tokenizer.seq_len(seq_len=seq_len, embed_dim=word_embedding_dim),
             embedding_dim=embedding_dim,
             seq_pool=True,
             dropout=0.,
